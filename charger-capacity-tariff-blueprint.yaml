@@ -94,6 +94,6 @@ action:
           {% set limit = 0 %}
         {% endif %}
 
-        {{ limit }}
+        {{ limit|int(0) }}
 
 mode: single
