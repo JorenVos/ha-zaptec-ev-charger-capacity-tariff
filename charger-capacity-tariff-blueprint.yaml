@@ -1,0 +1,99 @@
+blueprint:
+  name: Zaptec EV Charger Capacity Tariff handling
+  description: >
+    # Zaptec EV Charger Capacity Tariff handling
+
+    Automatically control the available power within a Zaptec installation. This allows you to avoid peaks in the capacity tariff.
+
+    Note: this is not a load balancer! It will calculate a current (between 6A and provided max)
+  domain: automation
+  author: https://github.com/JorenVos
+
+  input:
+    input_max_peak:
+      name: Max peak
+      description: Set the max peak for capacity tariff
+      default: 5.0
+      selector:
+        number:
+          min: 2.5
+          max: 22
+          step: 0.5
+          unit_of_measurement: "kW"
+    input_max_current:
+      name: Max current
+      description: Set the max current for the installation
+      default: 16.0
+      selector:
+        number:
+          min: 6.0
+          max: 32
+          step: 1
+          unit_of_measurement: "A"
+    input_phases:
+      name: Phases
+      description: Number of phases
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 3
+          step: 1
+    input_actual_power:
+      name: actual_power power
+      description: Power sensor for whole installation (Watt)
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+            - device_class: energy
+
+trigger:
+  - platform: time_pattern
+    seconds: /20
+
+action:
+  - variables:
+      _max_peak: !input input_max_peak
+      _max_current: !input input_max_current
+      _phases: !input input_phases
+      _actual_power: !input input_actual_power
+      my_device_id: "{{ integration_entities('zaptec') | first | device_id }}"
+      number_avail_curr: "{{ integration_entities('zaptec') | select('match', 'number.*available_current') | first }}"
+      binary_sensor_installation: "{{ integration_entities('zaptec') | select('match', 'binary_sensor.*_installation') | first }}"
+
+  - service: zaptec.limit_current
+    data:
+      device_id: "{{ my_device_id }}"
+      available_current: >-
+        {% set charger_limit = states(number_avail_curr)|float(0) %}
+        {% set limit = charger_limit %}
+
+        {% set updated_on = as_datetime(state_attr(binary_sensor_installation, 'updated_on')) %}
+        {% set updates_ok = utcnow().replace(tzinfo=None) - updated_on > timedelta(minutes=5) %}
+
+        {% set charger_mode_entities = integration_entities('zaptec') | select('match', 'sensor.*_charger_mode') %}
+        {% set all_charger_states = expand(charger_mode_entities) | map(attribute='state') | list %}
+        {% set is_charging = 'Charging' in all_charger_states %}
+        {% set is_waiting = 'Waiting' in all_charger_states %}
+
+        {% if (is_charging and updates_ok) or is_waiting %}
+          {% set actual_power = states(_actual_power)|int(0) %}
+          {% set max_peak = _max_peak * 1000 %}
+          {% set available_power = max_peak - actual_power %}
+          {% set available_current = available_power / 230 / _phases  %}
+
+          {% if available_current >= 6 %}
+            {% set limit = [available_current, _max_current]|max %}
+          {% else %}
+            {% set limit = 0 %}
+          {% endif %}
+        {% endif %}
+
+        {% if not is_charging and not is_waiting %}
+          {% set limit = 0 %}
+        {% endif %}
+
+        {{ limit }}
+
+mode: single
