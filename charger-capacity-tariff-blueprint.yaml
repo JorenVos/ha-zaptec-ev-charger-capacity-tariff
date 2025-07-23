@@ -46,7 +46,7 @@ blueprint:
         entity:
           filter:
             - domain: sensor
-            - device_class: energy
+            - device_class: power
 
 trigger:
   - platform: time_pattern
@@ -84,7 +84,7 @@ action:
           {% set available_current = available_power / 230 / _phases  %}
 
           {% if available_current >= 6 %}
-            {% set limit = [available_current, _max_current]|max %}
+            {% set limit = [available_current, _max_current]|min %}
           {% else %}
             {% set limit = 0 %}
           {% endif %}
