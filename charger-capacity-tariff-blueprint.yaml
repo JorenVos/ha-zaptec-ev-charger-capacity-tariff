@@ -50,7 +50,7 @@ blueprint:
 
 trigger:
   - platform: time_pattern
-    seconds: /60
+    minutes: /1
 
 action:
   - variables:
