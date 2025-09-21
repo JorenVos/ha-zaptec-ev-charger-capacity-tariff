@@ -77,7 +77,7 @@ action:
         {% set is_charging = 'Charging' in all_charger_states %}
         {% set is_waiting = 'Waiting' in all_charger_states %}
 
-        {% if (is_charging and updates_ok) or is_waiting %}
+        {% if (is_charging and total_zaptec_power > 0) or is_waiting %}
           {% set power_sensors = integration_entities('zaptec') | select('match', 'sensor.*_charge_power') %}
           {% set total_zaptec_power = expand(power_sensors) | map(attribute='state')| map('float', 0) | sum %}
 
