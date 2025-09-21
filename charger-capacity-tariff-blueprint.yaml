@@ -73,10 +73,10 @@ action:
         {% set is_charging = 'connected_charging' in all_charger_states %}
         {% set is_waiting = 'connected_requesting' in all_charger_states %}
 
-        {% if (is_charging and total_zaptec_power > 0) or is_waiting %}
-          {% set power_sensors = integration_entities('zaptec') | select('match', 'sensor.*_charge_power') %}
-          {% set total_zaptec_power = expand(power_sensors) | map(attribute='state')| map('float', 0) | sum %}
+        {% set power_sensors = integration_entities('zaptec') | select('match', 'sensor.*_charge_power') %}
+        {% set total_zaptec_power = expand(power_sensors) | map(attribute='state')| map('float', 0) | sum %}
 
+        {% if (is_charging and total_zaptec_power > 0) or is_waiting %}
           {% set total_power = states(_actual_power)|int(0) %}
           {% set actual_power = total_power - total_zaptec_power %}
           {% set max_peak = _max_peak * 1000 %}
