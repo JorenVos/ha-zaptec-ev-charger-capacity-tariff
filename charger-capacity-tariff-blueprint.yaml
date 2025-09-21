@@ -61,10 +61,6 @@ action:
       my_device_id: "{{ integration_entities('zaptec') | first | device_id }}"
       number_avail_curr: "{{ integration_entities('zaptec') | select('match', 'number.*available_current') | first }}"
       binary_sensor_installation: "{{ integration_entities('zaptec') | select('match', 'binary_sensor.*_installation') | first }}"
-
-  - service: zaptec.limit_current
-    data:
-      device_id: "{{ my_device_id }}"
       available_current: >-
         {% set charger_limit = states(number_avail_curr)|float(0) %}
         {% set limit = charger_limit %}
@@ -99,5 +95,12 @@ action:
         {% endif %}
 
         {{ limit|int(0) }}
+
+  - service: zaptec.limit_current
+    data:
+      device_id: "{{ my_device_id }}"
+      available_current_phase1: "{{ available_current }}"
+      available_current_phase2: "{{ available_current }}"
+      available_current_phase3: "{{ available_current }}"
 
 mode: single
