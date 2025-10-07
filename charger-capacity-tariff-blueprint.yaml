@@ -59,7 +59,7 @@ action:
       _phases: !input input_phases
       _actual_power: !input input_actual_power
       my_device_id: "{{ integration_entities('zaptec') | first | device_id }}"
-      number_avail_curr: "{{ integration_entities('zaptec') | select('match', 'number.*available_current') | first }}"
+      number_avail_curr: "{{ integration_entities('zaptec') | select('match', 'sensor.*_available_current_phase_1') | first }}"
       binary_sensor_installation: "{{ integration_entities('zaptec') | select('match', 'binary_sensor.*_installation') | first }}"
       available_current: >-
         {% set charger_limit = states(number_avail_curr)|float(0) %}
