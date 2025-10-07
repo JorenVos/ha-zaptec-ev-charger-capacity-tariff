@@ -84,7 +84,9 @@ action:
           {% set available_current = available_power / 230 / _phases  %}
 
           {% if available_current >= 6 %}
-            {% set limit = [available_current, _max_current]|min %}
+            {% if updates_ok %}
+              {% set limit = [available_current, _max_current]|min %}
+            {% endif %}
           {% else %}
             {% set limit = 0 %}
           {% endif %}
